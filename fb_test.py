@@ -4,20 +4,22 @@ import matplotlib.pyplot as plt
 import time
 import matplotlib.dates as md
 import datetime as dt
-
+import math
 
 
 def read(data):
     G = nx.DiGraph()
     with open(data) as f:
+        selfposts = 0
         for line in f:
             #print(line)
             node1, node2, timestamp = line.split("\t")[:3]
-            #print(node1)            
-            #print(timestamp)
+            if node1 == node2:
+                selfposts += 1
             #G.add_nodes_from(node1,node2)
-            G.add_edge(int(node1),int(node2), timestamp = float(timestamp))
+            G.add_edge(int(node2),int(node1), timestamp = float(timestamp))
     #edges = G.edges(data = True)
+    print("Number of posts on own wall: " + str(selfposts))
     #print(edges)
     #edge_list = list(edges)
     return G
@@ -118,6 +120,23 @@ def timestamp_vs_indeg(G):
 
 
 
+def run_powerlaw(G):
+    power_law("overall degree",G.degree,1)
+    power_law("in degree",G.in_degree,1)
+    power_law("out_degree", G.out_degree,1)
+
+def power_law(degtype,distribution,k_min):
+    #degree sequence
+    degree_sequence = list([d for n, d in distribution])
+    #degree sequence above kmin
+    degree_sequence_lim = [i for i in degree_sequence if i >= k_min]
+    liss = []
+    for i in degree_sequence_lim:
+        if i >= k_min:
+            liss.append(math.log(i/(k_min - 0.5)))
+    gamma = 1+ len(degree_sequence_lim)* (sum(liss)**-1)
+    print("gamma " + degtype + " = " +str(gamma))
+
 
 
 
@@ -125,6 +144,7 @@ def timestamp_vs_indeg(G):
 
 if __name__ == "__main__":
     graph = read("data/facebook-wall.txt.anon")
-    degree_dist(graph)
-    in_degree_out_degree(graph)
-    timestamp_vs_indeg(graph)
+    #degree_dist(graph)
+    #in_degree_out_degree(graph)
+    #timestamp_vs_indeg(graph)
+    #run_powerlaw(graph)
