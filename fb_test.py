@@ -17,6 +17,7 @@ def read(data):
             if node1 == node2:
                 selfposts += 1
             #G.add_nodes_from(node1,node2)
+            #here these are flipped
             G.add_edge(int(node2),int(node1), timestamp = float(timestamp))
     #edges = G.edges(data = True)
     print("Number of posts on own wall: " + str(selfposts))
