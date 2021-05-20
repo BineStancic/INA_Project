@@ -271,9 +271,10 @@ def score_score(G):
 
 
     plt.figure(figsize=(12, 8)) 
-    plt.scatter(xaxx, yaxx, marker = ".", color = 'b', label = "Degree distribution") 
+    #plt.scatter(xaxx, yaxx, marker = ".", color = 'b', label = "Degree distribution") 
     #plt.loglog(in_degrees, in_degree_count, marker = ".", linewidth = 0, color = 'g', label = "In degree distribution") 
     #plt.loglog(out_degrees, out_degree_count, marker = ".", linewidth = 0, color = 'r', label = "out degree distribution") 
+    plt.hist2d(xaxx,yaxx, bins = 40)
     plt.xlabel('node a score')
     plt.ylabel('node b score')
     #plt.legend()
@@ -297,11 +298,11 @@ def score_score(G):
 
 if __name__ == "__main__":
     graph = read("data/soc-sign-bitcoinotc.csv")
-    deg_score_distr(graph)
-    deg_distr(graph)
-    in_degree_out_degree(graph)
+    #deg_score_distr(graph)
+    #deg_distr(graph)
+    #in_degree_out_degree(graph)
     #timestamp_vs_indeg(graph)
-    #score_score(graph)
+    score_score(graph)
     #a = frozenset(['A','T'])
     #b= frozenset(['T','A'])
     #if a == b:
