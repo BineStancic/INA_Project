@@ -1,4 +1,5 @@
 import collections
+from collections import Counter
 import networkx as nx
 import matplotlib.pyplot as plt
 import time
@@ -19,7 +20,7 @@ def read(data):
             #G.add_nodes_from(node1,node2)
             #here these are flipped
             G.add_edge(int(node2),int(node1), timestamp = float(timestamp))
-    #edges = G.edges(data = True)
+    #could remove this
     print("Number of posts on own wall: " + str(selfposts))
     #print(edges)
     #edge_list = list(edges)
@@ -142,6 +143,100 @@ def power_law(degtype,distribution,k_min):
 
 
 
+# for each node find what date it hs most in degrees
+# then to make sense of it modulo it 365 and see if they match
+def date_most_posts(G):
+    nodes = G.nodes()
+    edges = G.edges(data = True)
+    edge_list = list(edges)
+    timestamp_list = []
+    for edge in edge_list:
+        timestamp = edge[2]["timestamp"]
+        timestamp_list.append(timestamp)
+    #print(edge_list[10])
+
+    dates=[dt.datetime.fromtimestamp(ts) for ts in timestamp_list]
+    #print(dates[0].month)
+    #print(dates[0].day)
+    # replace the unix time with datetime
+    for i,edge in enumerate(edge_list):
+        edge[2]["timestamp"] = dates[i]
+    
+    #convert edgelist to dict for linear lookup
+    # note if an edge between the nodes already exists append to list the second date
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # Frozenset.... dont we lose the information weather we are looking at indegree vs outdegree
+    edge_dict = {}
+    for edge in edge_list:
+        #print(edge[0])
+        if frozenset([edge[0],edge[1]]) not in edge_dict.keys():
+            edge_dict[frozenset([edge[0],edge[1]])] = [(edge[2]["timestamp"].day, edge[2]["timestamp"].month)]
+        else:
+            edge_dict[frozenset([edge[0],edge[1]])].append((edge[2]["timestamp"].day, edge[2]["timestamp"].month))
+
+    #print(len(edge_dict))
+    # dictionary with each node as key
+    # then for every node count the number of in degree for every date of year
+    # only considering month and day, find the largest one and 
+    # NOTEEEE!!!!!!!!!!
+    # this is only dist with node as key and then list of dates that people posted on wall
+
+    dates_dict = {}
+    for node in nodes:
+        in_edges = (G.in_edges(node))
+        for in_edge in in_edges:
+            #print(edge_dict[frozenset(in_edge)])
+            if node not in dates_dict.keys():
+                dates_dict[node] = list([edge_dict[frozenset(in_edge)]])      # here had ot add brackets because otherwise the first entry want read into a tuple but just the items
+            else:
+                dates_dict[node].append(edge_dict[frozenset(in_edge)])
+
+    #print(dates_dict)
+
+    # go through dates dict find most popular date for each node print it
+    # then convert it to 365?
+    assumed_bdays = []
+    for date in dates_dict:
+        dates_lis = dates_dict[date]
+        flat_list = [item for sublist in dates_lis for item in sublist]
+        most_freq = most_frequent(flat_list)
+        assumed_bdays.append(most_freq[1])
+
+
+
+    #bins = 100
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(assumed_bdays,12, color = "b", histtype='bar', ec='black')
+    plt.xlabel('Month')
+    plt.ylabel('Number of nodes with highest in degree on this month')
+    plt.show()
+
+
+    #in days
+    assumed_bdays = []
+    for date in dates_dict:
+        dates_lis = dates_dict[date]
+        flat_list = [item for sublist in dates_lis for item in sublist]
+        most_freq = most_frequent(flat_list)
+        assumed_bdays.append(most_freq[1]*30 + most_freq[0])
+
+
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(assumed_bdays,365, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Day of the year')
+    plt.ylabel('Number of nodes with highest in degree on this month')
+    plt.show()
+
+
+
+def most_frequent(List):
+    occurence_count = Counter(List)
+    return occurence_count.most_common(1)[0][0]
+
+
+
 
 if __name__ == "__main__":
     graph = read("data/facebook-wall.txt.anon")
@@ -149,3 +244,4 @@ if __name__ == "__main__":
     #in_degree_out_degree(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
+    date_most_posts(graph)
