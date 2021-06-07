@@ -18,12 +18,13 @@ def read(data):
             if node1 == node2:
                 selfposts += 1
             #G.add_nodes_from(node1,node2)
-            #here these are flipped
+            #here these are flipped because user 2 posted on user 1 wall
             G.add_edge(int(node2),int(node1), timestamp = float(timestamp))
     #could remove this
     print("Number of posts on own wall: " + str(selfposts))
     #print(edges)
-    #edge_list = list(edges)
+    #edge_list = list(edges)'
+    #print(G.number_of_nodes())
     return G
 
 def degree_dist(G):
@@ -180,7 +181,7 @@ def date_most_posts(G):
     # only considering month and day, find the largest one and 
     # NOTEEEE!!!!!!!!!!
     # this is only dist with node as key and then list of dates that people posted on wall
-
+    # LOOK AT THE LENGTH OF each list to see how many people posted on the wall??
     dates_dict = {}
     for node in nodes:
         in_edges = (G.in_edges(node))
@@ -191,7 +192,7 @@ def date_most_posts(G):
             else:
                 dates_dict[node].append(edge_dict[frozenset(in_edge)])
 
-    #print(dates_dict)
+    print(dates_dict)
 
     # go through dates dict find most popular date for each node print it
     # then convert it to 365?
@@ -204,23 +205,49 @@ def date_most_posts(G):
 
 
 
-    #bins = 100
-    plt.figure(figsize=(12, 8)) 
-    #fig, ax = plt.subplots(figsize=(12, 8))
-    plt.hist(assumed_bdays,12, color = "b", histtype='bar', ec='black')
-    plt.xlabel('Month')
-    plt.ylabel('Number of nodes with highest in degree on this month')
-    plt.show()
 
 
+
+
+    ############################################################################
+    ### SAME BUT for out deg.note we still expect this to be highest in birth months 
+    out_dates_dict = {}
+    for node in nodes:
+        out_edges = (G.out_edges(node))
+        for out_edge in out_edges:
+            #print(edge_dict[frozenset(in_edge)])
+            if node not in out_dates_dict.keys():
+                out_dates_dict[node] = list([edge_dict[frozenset(out_edge)]])      # here had ot add brackets because otherwise the first entry want read into a tuple but just the items
+            else:
+                out_dates_dict[node].append(edge_dict[frozenset(out_edge)])
+
+    #print(dates_dict)
+
+    # go through dates dict find most popular date for each node print it
+    # then convert it to 365?
+    normalization = []
+    for date in out_dates_dict:
+        dates_lis = out_dates_dict[date]
+        flat_list = [item for sublist in dates_lis for item in sublist]
+        most_freq = most_frequent(flat_list)
+        normalization.append(most_freq[1])
+
+    return(assumed_bdays, normalization)
+
+
+
+
+
+    """
     #in days
     assumed_bdays = []
     for date in dates_dict:
         dates_lis = dates_dict[date]
         flat_list = [item for sublist in dates_lis for item in sublist]
         most_freq = most_frequent(flat_list)
-        assumed_bdays.append(most_freq[1]*30 + most_freq[0])
+        assumed_bdays.append((most_freq[1]-1)*30 + most_freq[0])
 
+    #print(min(assumed_bdays))
 
     plt.figure(figsize=(12, 8)) 
     #fig, ax = plt.subplots(figsize=(12, 8))
@@ -228,14 +255,101 @@ def date_most_posts(G):
     plt.xlabel('Day of the year')
     plt.ylabel('Number of nodes with highest in degree on this month')
     plt.show()
-
+    """
 
 
 def most_frequent(List):
     occurence_count = Counter(List)
     return occurence_count.most_common(1)[0][0]
 
+def normalise(G):
+    nodes = G.nodes()
+    edges = G.edges(data = True)
+    edge_list = list(edges)
+    #timestamp_list = []
+    #for edge in edge_list:
+    #    timestamp = edge[2]["timestamp"]
+    #    timestamp_list.append(timestamp)
 
+
+    #dates=[dt.datetime.fromtimestamp(ts) for ts in timestamp_list]
+
+    interactions_dict = {}
+    # dict with every node as key and timestamp of every interaction... indeg/outdeg doesnt matter 
+    for edge in edge_list:
+        #print(edge)
+        if edge[0] not in interactions_dict.keys():
+            interactions_dict[edge[0]] = [edge[2]["timestamp"]]
+
+        if edge[1] not in interactions_dict.keys():
+            interactions_dict[edge[1]] = [edge[2]["timestamp"]]
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[0]].append(edge[2]["timestamp"])
+
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[1]].append(edge[2]["timestamp"])
+    
+    #print(interactions_dict)
+    # for every node take the timestamp of the earliest interaction 
+    # list of lists with list being a list of months containing the nodes that first interracted on that date.
+    # from which we then take the number of nodes which we will use to normalise.
+    months = [ [] for _ in range(12) ]
+   
+    for key in interactions_dict.keys():
+        timestamps = interactions_dict[key]
+        min_timestamp = min(timestamps)
+        #print(min_timestamp)
+        interactions_dict[key] = min_timestamp
+        months[interactions_dict[key].month - 1].append(key)
+
+    #print(interactions_dict)
+ 
+    #print(months)
+    #print(len(months[0])+ len(months[1]) +len(months[2]) + len(months[3])+len(months[4])+len(months[5])+len(months[6])+len(months[7])+len(months[8])+len(months[9])+len(months[10])+len(months[11]))
+    month_count = []
+    for month in months:
+        month_count.append(len(month))
+    # might have to be cumulative starting Feb, endjing january.... might have to do it in days
+    #print(month_count)
+
+    return(month_count)
+        
+
+
+
+def bday_plot(assumed_bdays,norm):
+    
+    bdays_count = [ [0] for _ in range(12) ]
+    #print(month_count)
+    #print(bdays_count)
+    for i in assumed_bdays:
+        bdays_count[i -1][0] +=1 
+    #print(assumed_bdays)
+    bdays_count = [item for sublist in bdays_count for item in sublist]
+
+    norm_count = [ [0] for _ in range(12) ]
+    #print(month_count)
+    #print(bdays_count)
+    for i in norm:
+        norm_count[i -1][0] +=1 
+    print(assumed_bdays)
+    norm_count = [item for sublist in norm_count for item in sublist]
+
+    print(bdays_count)
+    print(norm)
+    bananasplit = [b / m for b,m in zip(bdays_count, norm_count)]
+    #print(bananasplit)
+    
+
+    #bins = 100
+    plt.figure(figsize=(12, 8)) 
+    #plt.hist(norm,12, color = "b", histtype='bar', ec='black')
+    plt.plot(bananasplit)
+    plt.xlabel('Month')
+    #plt.ylabel('Number of nodes with highest in degree on this month')
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -244,4 +358,6 @@ if __name__ == "__main__":
     #in_degree_out_degree(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
-    date_most_posts(graph)
+    assumed_bdays, normalization = date_most_posts(graph)
+    month_count = normalise(graph)
+    bday_plot(assumed_bdays, normalization)
