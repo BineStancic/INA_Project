@@ -387,6 +387,55 @@ def bday_plot(assumed_bdays,norm):
     
 
 
+# want to compare the average clustering of the overall graph with that of the subragphs formed starting from the nodes with 0 indegree.
+def spam(G):
+    print(nx.average_clustering(G))
+    node_ids = G.nodes()
+
+    in_deg = sorted(G.in_degree, key=lambda x: x[1], reverse=True)
+    out_deg = sorted(G.out_degree, key=lambda x: x[1], reverse=True)
+    #print(out_deg[:10])
+
+
+    # look at the ratio of outdeg vs indeg for every node
+    # possibly just remove all nodes with 0 indeg
+    in_out_ratio = {}
+    for node in out_deg:
+        in_out_ratio[node[0]] = [node[1]]
+        
+    for node in in_deg:
+        if node[1] == 0:
+            in_out_ratio[node[0]][0] /= 0.01
+        else:
+            in_out_ratio[node[0]][0] /= node[1]
+
+
+    for node in in_out_ratio:
+        in_out_ratio[node].append(nx.clustering(G, node))
+
+
+    aa = list(in_out_ratio.values())
+    in_out, clustering = zip(*aa)
+    
+
+
+
+
+    
+    plt.figure(figsize=(12, 8)) 
+    plt.scatter(in_out, clustering, marker = ".", linewidth = 0, color = 'b')
+    plt.xlabel('In_out_degree ratio')
+    plt.ylabel('Clustering')
+    plt.show()
+
+
+    #print(nx.clustering(G, 133))
+    #print(nx.clustering(G, 3727))
+    #print(nx.clustering(G, 5423))
+    #14416
+
+
+
 
 
 
@@ -394,6 +443,7 @@ if __name__ == "__main__":
     graph = read("data/facebook-wall.txt.anon")
     #degree_dist(graph)
     #in_degree_out_degree(graph)
+    spam(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
     #assumed_bdays = date_most_posts(graph)
