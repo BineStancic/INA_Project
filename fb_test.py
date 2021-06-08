@@ -192,21 +192,21 @@ def date_most_posts(G):
             else:
                 dates_dict[node].append(edge_dict[frozenset(in_edge)])
 
-    print(dates_dict)
+    #print(dates_dict)
 
     # go through dates dict find most popular date for each node print it
     # then convert it to 365?
-    assumed_bdays = []
-    for date in dates_dict:
-        dates_lis = dates_dict[date]
-        flat_list = [item for sublist in dates_lis for item in sublist]
-        most_freq = most_frequent(flat_list)
-        assumed_bdays.append(most_freq[1])
+    #assumed_bdays = []
+    #for date in dates_dict:
+    #    dates_lis = dates_dict[date]
+    #    flat_list = [item for sublist in dates_lis for item in sublist]
+    #    most_freq = most_frequent(flat_list)
+    #    assumed_bdays.append(most_freq[1])
 
 
 
 
-
+    """
 
 
     ############################################################################
@@ -231,24 +231,24 @@ def date_most_posts(G):
         flat_list = [item for sublist in dates_lis for item in sublist]
         most_freq = most_frequent(flat_list)
         normalization.append(most_freq[1])
-
-    return(assumed_bdays, normalization)
-
-
-
-
-
     """
+
+
+
+
+
+
+    
     #in days
     assumed_bdays = []
     for date in dates_dict:
         dates_lis = dates_dict[date]
         flat_list = [item for sublist in dates_lis for item in sublist]
         most_freq = most_frequent(flat_list)
-        assumed_bdays.append((most_freq[1]-1)*30 + most_freq[0])
+        assumed_bdays.append(int((most_freq[1]-1)*30.4 + most_freq[0]))
 
     #print(min(assumed_bdays))
-
+    """
     plt.figure(figsize=(12, 8)) 
     #fig, ax = plt.subplots(figsize=(12, 8))
     plt.hist(assumed_bdays,365, color = "g", histtype='bar', ec='black')
@@ -256,6 +256,8 @@ def date_most_posts(G):
     plt.ylabel('Number of nodes with highest in degree on this month')
     plt.show()
     """
+    return(assumed_bdays)
+
 
 
 def most_frequent(List):
@@ -266,13 +268,6 @@ def normalise(G):
     nodes = G.nodes()
     edges = G.edges(data = True)
     edge_list = list(edges)
-    #timestamp_list = []
-    #for edge in edge_list:
-    #    timestamp = edge[2]["timestamp"]
-    #    timestamp_list.append(timestamp)
-
-
-    #dates=[dt.datetime.fromtimestamp(ts) for ts in timestamp_list]
 
     interactions_dict = {}
     # dict with every node as key and timestamp of every interaction... indeg/outdeg doesnt matter 
@@ -295,40 +290,77 @@ def normalise(G):
     # for every node take the timestamp of the earliest interaction 
     # list of lists with list being a list of months containing the nodes that first interracted on that date.
     # from which we then take the number of nodes which we will use to normalise.
-    months = [ [] for _ in range(12) ]
-   
+    # 
+    normalise = []
     for key in interactions_dict.keys():
         timestamps = interactions_dict[key]
         min_timestamp = min(timestamps)
         #print(min_timestamp)
         interactions_dict[key] = min_timestamp
-        months[interactions_dict[key].month - 1].append(key)
+        #months[interactions_dict[key].month - 1].append(key)
+        month = interactions_dict[key].month
+        day = interactions_dict[key].day
+        normalise.append(int((month - 1)*30.4 + day))
+
+    #print(max(normalise))
+
+    # want to start sum on 23rd day and finish on 22nd
+    day_count = [ [0] for _ in range(max(normalise)) ]
+    for i in normalise:
+        day_count[i-1][0] += 1
+    day_count = [item for sublist in day_count for item in sublist]
+
+    #print(day_count)
+
+    # start with 23rd day and end with 22nd day of the year
+    day_count = day_count[21:] + day_count[:21]
+    #print(day_count)
+    
+    count = 0    
+    for i,j in enumerate(day_count):
+        count += j
+        day_count[i] = count
+    #print(day_count)
+
+    #print(day_count)
+    
+    day_count = day_count[-21:] + day_count[:344]
+    
+    return(day_count)
+        
 
     #print(interactions_dict)
  
     #print(months)
     #print(len(months[0])+ len(months[1]) +len(months[2]) + len(months[3])+len(months[4])+len(months[5])+len(months[6])+len(months[7])+len(months[8])+len(months[9])+len(months[10])+len(months[11]))
+    '''
     month_count = []
     for month in months:
         month_count.append(len(month))
     # might have to be cumulative starting Feb, endjing january.... might have to do it in days
     #print(month_count)
 
-    return(month_count)
+
+    '''
+    #return(normalise)
         
 
 
 
 def bday_plot(assumed_bdays,norm):
+
     
-    bdays_count = [ [0] for _ in range(12) ]
+    
+    bdays_count = [ [0] for _ in range(max(assumed_bdays)) ]
     #print(month_count)
     #print(bdays_count)
     for i in assumed_bdays:
         bdays_count[i -1][0] +=1 
     #print(assumed_bdays)
     bdays_count = [item for sublist in bdays_count for item in sublist]
+    print(bdays_count)
 
+    """
     norm_count = [ [0] for _ in range(12) ]
     #print(month_count)
     #print(bdays_count)
@@ -339,17 +371,23 @@ def bday_plot(assumed_bdays,norm):
 
     print(bdays_count)
     print(norm)
-    bananasplit = [b / m for b,m in zip(bdays_count, norm_count)]
-    #print(bananasplit)
+    
+    """
+    bananasplit = [b / m for b,m in zip(bdays_count, norm)]
+    print(bananasplit)
     
 
     #bins = 100
     plt.figure(figsize=(12, 8)) 
-    #plt.hist(norm,12, color = "b", histtype='bar', ec='black')
+    #plt.hist(assumed_bdays, 365, color = "b", histtype='bar', ec='black')
     plt.plot(bananasplit)
-    plt.xlabel('Month')
+    plt.xlabel('day of the year')
     #plt.ylabel('Number of nodes with highest in degree on this month')
     plt.show()
+    
+
+
+
 
 
 if __name__ == "__main__":
@@ -358,6 +396,7 @@ if __name__ == "__main__":
     #in_degree_out_degree(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
-    assumed_bdays, normalization = date_most_posts(graph)
-    month_count = normalise(graph)
-    bday_plot(assumed_bdays, normalization)
+    #assumed_bdays = date_most_posts(graph)
+    #print(assumed_bdays)
+    #norm = normalise(graph)
+    #bday_plot(assumed_bdays, norm)
