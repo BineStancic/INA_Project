@@ -436,17 +436,83 @@ def spam(G):
 
 
 
+#
+def friendship_paradox(data):
+    G = nx.Graph()
+    with open(data) as f:
+        for line in f:
+            node1, node2 = line.split("\t")[:2]
+            G.add_edge(int(node2),int(node1))
+
+    #print(G.number_of_nodes())
+    
+    #print(G.number_of_edges())
+    #print(G.degree())
+    #return G
 
 
+    # degree distribution plot
+    nodes = G.number_of_nodes()
+    G_degrees = G.degree()
+
+    #degree distribution
+    degree_sequence = sorted([d for n, d in G_degrees], reverse=True)
+    degree_dic = collections.Counter(degree_sequence)
+    degrees, degree_count = zip(*degree_dic.items())
+
+    ##normalise by dividing by number of total nodes
+    degree_count = [i / nodes for i in degree_count]
+    #plots
+    plt.figure(figsize=(12, 8)) 
+    plt.loglog(degrees, degree_count, marker = ".", linewidth = 0, color = 'b') 
+    plt.xlabel('Node Degree')
+    plt.ylabel('Probability')
+    plt.show()
+
+
+    # for every node look ai its degree then look at its neighbors and their average degree
+    node_degrees = []
+    average_neighbors_degrees = []
+    for node in G_degrees:
+        node_degrees.append(node[1])
+        neighbors = list(G.neighbors(node[0]))
+        neighbors_degrees = []
+        for neighbor in neighbors:
+            neighbors_degrees.append(G.degree(neighbor))
+        average_neighbor_degree = sum(neighbors_degrees)/len(neighbors_degrees)
+        average_neighbors_degrees.append(average_neighbor_degree)
+    
+    # average node degree against average neighbor degree
+    print("Average node degree is: " +str(sum(node_degrees)/len(node_degrees)))
+    print("Average neighbour degree is: " +str(sum(average_neighbors_degrees)/len(average_neighbors_degrees)))
+
+    # count the number of nodes which have neighbor degree > node degree
+    count = 0
+    for node, neighbor in zip(node_degrees, average_neighbors_degrees):
+        if neighbor > node:
+            count += 1
+    # percentage of nodes that have lower degree than their average neighbor degree
+    print("Percentage of nodes that have lower degrees than their average neighbour degrees: " +str(count/len(node_degrees)))
+
+
+    # plot node degree against average neighbour degree
+    plt.figure(figsize=(12, 12)) 
+    plt.loglog(node_degrees, average_neighbors_degrees, marker = ".", linewidth = 0, color = 'b') 
+    plt.axline([0, 0], [1, 1], color = 'r', ls ="--", label = "y = x")
+    plt.xlabel('Node Degree')
+    plt.ylabel('Average Neighbor Degree')
+    plt.legend()
+    plt.show()
 
 if __name__ == "__main__":
-    graph = read("data/facebook-wall.txt.anon")
+    #graph = read("data/facebook-wall.txt.anon")
     #degree_dist(graph)
     #in_degree_out_degree(graph)
-    spam(graph)
+    #spam(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
     #assumed_bdays = date_most_posts(graph)
     #print(assumed_bdays)
     #norm = normalise(graph)
     #bday_plot(assumed_bdays, norm)
+    friendship_paradox("data/facebook-links.txt.anon")
