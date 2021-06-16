@@ -156,7 +156,11 @@ def date_most_posts(G):
         timestamp_list.append(timestamp)
     #print(edge_list[10])
 
+
+    # not last date is 2009-01-22 05:31:31
     dates=[dt.datetime.fromtimestamp(ts) for ts in timestamp_list]
+    print(min(dates))
+    print(max(dates))
     #print(dates[0].month)
     #print(dates[0].day)
     # replace the unix time with datetime
@@ -171,9 +175,9 @@ def date_most_posts(G):
     for edge in edge_list:
         #print(edge[0])
         if frozenset([edge[0],edge[1]]) not in edge_dict.keys():
-            edge_dict[frozenset([edge[0],edge[1]])] = [(edge[2]["timestamp"].day, edge[2]["timestamp"].month)]
+            edge_dict[frozenset([edge[0],edge[1]])] = [edge[2]["timestamp"]]
         else:
-            edge_dict[frozenset([edge[0],edge[1]])].append((edge[2]["timestamp"].day, edge[2]["timestamp"].month))
+            edge_dict[frozenset([edge[0],edge[1]])].append(edge[2]["timestamp"])
 
     #print(len(edge_dict))
     # dictionary with each node as key
@@ -192,53 +196,103 @@ def date_most_posts(G):
             else:
                 dates_dict[node].append(edge_dict[frozenset(in_edge)])
 
-    #print(dates_dict)
-
-    # go through dates dict find most popular date for each node print it
-    # then convert it to 365?
-    #assumed_bdays = []
-    #for date in dates_dict:
-    #    dates_lis = dates_dict[date]
-    #    flat_list = [item for sublist in dates_lis for item in sublist]
-    #    most_freq = most_frequent(flat_list)
-    #    assumed_bdays.append(most_freq[1])
+    
+    #for i in dates_dict.keys():
+    #    print(dates_dict[i])
 
 
 
+
+
+    interactions_dict = {}
+    # dict with every node as key and timestamp of every interaction... indeg/outdeg doesnt matter 
+    for edge in edge_list:
+        #print(edge)
+        if edge[0] not in interactions_dict.keys():
+            interactions_dict[edge[0]] = [edge[2]["timestamp"]]
+
+        if edge[1] not in interactions_dict.keys():
+            interactions_dict[edge[1]] = [edge[2]["timestamp"]]
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[0]].append(edge[2]["timestamp"])
+
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[1]].append(edge[2]["timestamp"])
+    #print(interactions_dict)
+
+
+    for key in interactions_dict.keys():
+        timestamps = interactions_dict[key]
+        min_timestamp = min(timestamps)
+        interactions_dict[key] = min_timestamp
+    
+
+
+    # want the node to be on the network for at least a year already therefore first day has to be less than or equal to 22 jan 2008
+    # not last date is 2009-01-22 05:31:31 so remove 22nd as well!!
+    # nodes that have been in the network for at least a year get added to the list
+    
+    at_least_one_year = []
+    for key in interactions_dict.keys():
+        first_post = interactions_dict[key]
+        if first_post < dt.datetime(2008, 1, 22, 0, 0):
+            #print(first_post)
+            at_least_one_year.append(key)
+        
+    """
+    at_least_one_year = []
+    for key in dates_dict.keys():
+        dates = [item for sublist in dates_dict[key] for item in sublist]
+        #print(dates)
+        first_post = min(dates)
+        #print(first_post)
+        if first_post < dt.datetime(2008, 1, 22, 0, 0):
+            at_least_one_year.append(key)
 
     """
+    #print(at_least_one_year)
+    #print(first_post)
 
-
-    ############################################################################
-    ### SAME BUT for out deg.note we still expect this to be highest in birth months 
-    out_dates_dict = {}
-    for node in nodes:
-        out_edges = (G.out_edges(node))
-        for out_edge in out_edges:
-            #print(edge_dict[frozenset(in_edge)])
-            if node not in out_dates_dict.keys():
-                out_dates_dict[node] = list([edge_dict[frozenset(out_edge)]])      # here had ot add brackets because otherwise the first entry want read into a tuple but just the items
-            else:
-                out_dates_dict[node].append(edge_dict[frozenset(out_edge)])
 
     #print(dates_dict)
 
-    # go through dates dict find most popular date for each node print it
+
+
+
+
+    # go through dates dict check if the node has been in the network for a year.
+    # 
     # then convert it to 365?
-    normalization = []
-    for date in out_dates_dict:
-        dates_lis = out_dates_dict[date]
-        flat_list = [item for sublist in dates_lis for item in sublist]
-        most_freq = most_frequent(flat_list)
-        normalization.append(most_freq[1])
-    """
+    assumed_bdays = []
+    lens = []
+    for node in at_least_one_year:
+        if node in dates_dict.keys():
+            dates_lis = dates_dict[node]
+            #print(dates_lis)
+            flat_list = [item for sublist in dates_lis for item in sublist]
+            lens.append(len(flat_list))
 
+            for i,date in enumerate(flat_list):
+                flat_list[i] = (date.day, date.month)
+            #print(flat_list)
+            most_freq = most_frequent(flat_list)
+            assumed_bdays.append(most_freq[1])
 
-
-
-
+    print(sum(lens)/len(lens))
 
     
+
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(assumed_bdays,12, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Month of the year')
+    plt.ylabel('Number of nodes with highest in degree on this month')
+    plt.show()
+    
+
+    '''
     #in days
     assumed_bdays = []
     for date in dates_dict:
@@ -248,14 +302,15 @@ def date_most_posts(G):
         assumed_bdays.append(int((most_freq[1]-1)*30.4 + most_freq[0]))
 
     #print(min(assumed_bdays))
-    """
+    
     plt.figure(figsize=(12, 8)) 
     #fig, ax = plt.subplots(figsize=(12, 8))
     plt.hist(assumed_bdays,365, color = "g", histtype='bar', ec='black')
     plt.xlabel('Day of the year')
     plt.ylabel('Number of nodes with highest in degree on this month')
     plt.show()
-    """
+    '''
+    
     return(assumed_bdays)
 
 
@@ -505,14 +560,14 @@ def friendship_paradox(data):
     plt.show()
 
 if __name__ == "__main__":
-    #graph = read("data/facebook-wall.txt.anon")
+    graph = read("data/facebook-wall.txt.anon")
     #degree_dist(graph)
     #in_degree_out_degree(graph)
     #spam(graph)
     #timestamp_vs_indeg(graph)
     #run_powerlaw(graph)
-    #assumed_bdays = date_most_posts(graph)
+    assumed_bdays = date_most_posts(graph)
     #print(assumed_bdays)
     #norm = normalise(graph)
     #bday_plot(assumed_bdays, norm)
-    friendship_paradox("data/facebook-links.txt.anon")
+    #friendship_paradox("data/facebook-links.txt.anon")
