@@ -6,6 +6,7 @@ import time
 import matplotlib.dates as md
 import datetime as dt
 import math
+import pandas as pd
 
 
 def read(data):
@@ -472,7 +473,7 @@ def date_most_posts(G):
     # if doesnt work then also count then number of posts on most frequent day.
 
 
-    #print(dict_2008)
+    #print(dict_2006)
     
     """
     count_9215 = []
@@ -506,8 +507,9 @@ def date_most_posts(G):
     plt.ylabel('Node 9215, year 2008')
     plt.show()
     """
-
+    
     assumed_bdays = []
+    node_mostpop_day_dic = {}
     for node in dict_2005:
         dates_lis = dict_2005[node]
         if dates_lis:
@@ -515,32 +517,77 @@ def date_most_posts(G):
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             # possibly also look at the counts
             #print(most_freq[0][0])
-            #assumed_bdays.append(most_freq[0][0][1])
+            if most_freq[0][1] > 1:
+                #assumed_bdays.extend([most_freq[0][0][1] for i in range(most_freq[0][1])])
+                if node not in node_mostpop_day_dic.keys():
+                    node_mostpop_day_dic[node] = [most_freq[0][0], 1]
+
+                else:
+                    node_mostpop_day_dic[node][1] += 1
+                
+                #assumed_bdays.append(most_freq[0][0][1])
             #print(dates_lis)
 
     for node in dict_2006:
         dates_lis = dict_2006[node]
         if dates_lis:
             most_freq = most_frequent(dates_lis)
-            #assumed_bdays.append(most_freq[0][0][1])
+            if most_freq[0][1] > 1:
+                #print(most_freq)
+                #print(node)
+                #assumed_bdays.extend([most_freq[0][0][1] for i in range(most_freq[0][1])])
+                #print(assumed_bdays)
+                if node not in node_mostpop_day_dic.keys():
+                    node_mostpop_day_dic[node] = [most_freq[0][0], 1]
+
+                else:
+                    node_mostpop_day_dic[node][1] += 1
+                #assumed_bdays.append(most_freq[0][0][1])
 
     for node in dict_2007:
         dates_lis = dict_2007[node]
         if dates_lis:
             most_freq = most_frequent(dates_lis)
-            #assumed_bdays.append(most_freq[0][0][1])
+            if most_freq[0][1] > 1:
+                #assumed_bdays.extend([most_freq[0][0][1] for i in range(most_freq[0][1])])
+                if node not in node_mostpop_day_dic.keys():
+                    node_mostpop_day_dic[node] = [most_freq[0][0], 1]
+
+                else:
+                    node_mostpop_day_dic[node][1] += 1
+                #assumed_bdays.append(most_freq[0][0][1])
 
 
     for node in dict_2008:
         dates_lis = dict_2008[node]
         if dates_lis:
             most_freq = most_frequent(dates_lis)
-            assumed_bdays.append(most_freq[0][0][1])
+            if most_freq[0][1] > 1:
+                #assumed_bdays.extend([most_freq[0][0][1] for i in range(most_freq[0][1])])
+                if node not in node_mostpop_day_dic.keys():
+                    node_mostpop_day_dic[node] = [most_freq[0][0], 1]
+
+                else:
+                    node_mostpop_day_dic[node][1] += 1
+                #assumed_bdays.append(most_freq[0][0][1])
     
 
+    assumed_bdays = []
+    count = 0
+    two_years = {}
+    for node in node_mostpop_day_dic.keys():
+        date_years = node_mostpop_day_dic[node]
+        if date_years[1] > 1:
+            count+=1
+            assumed_bdays.append(date_years[0][1])
+            two_years[node] = date_years[0]
+    #print(count)
+    #print(two_years)
 
-    #print(assumed_bdays)
-    
+
+    aaa = pd.DataFrame.from_dict(two_years, orient='index')
+    print(aaa.head())
+    aaa.to_csv("data/birthdays.csv")
 
     plt.figure(figsize=(12, 8)) 
     #fig, ax = plt.subplots(figsize=(12, 8))
