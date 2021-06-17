@@ -142,7 +142,7 @@ def power_law(degtype,distribution,k_min):
 
 
 
-
+"""
 
 # for each node find what date it hs most in degrees
 # then to make sense of it modulo it 365 and see if they match
@@ -241,7 +241,7 @@ def date_most_posts(G):
             #print(first_post)
             at_least_one_year.append(key)
         
-    """
+    '''
     at_least_one_year = []
     for key in dates_dict.keys():
         dates = [item for sublist in dates_dict[key] for item in sublist]
@@ -251,7 +251,7 @@ def date_most_posts(G):
         if first_post < dt.datetime(2008, 1, 22, 0, 0):
             at_least_one_year.append(key)
 
-    """
+    '''
     #print(at_least_one_year)
     #print(first_post)
 
@@ -313,11 +313,251 @@ def date_most_posts(G):
     
     return(assumed_bdays)
 
+"""
+
+
+
+
+# 2005,2006,2007,2008
+def date_most_posts(G):
+    nodes = G.nodes()
+    edges = G.edges(data = True)
+    edge_list = list(edges)
+    timestamp_list = []
+    for edge in edge_list:
+        timestamp = edge[2]["timestamp"]
+        timestamp_list.append(timestamp)
+    #print(edge_list[10])
+
+
+    # not last date is 2009-01-22 05:31:31
+    dates=[dt.datetime.fromtimestamp(ts) for ts in timestamp_list]
+    #print(min(dates))
+    #print(max(dates))
+    #print(dates[0].month)
+    #print(dates[0].day)
+    # replace the unix time with datetime
+    for i,edge in enumerate(edge_list):
+        edge[2]["timestamp"] = dates[i]
+    
+    #convert edgelist to dict for linear lookup
+    # note if an edge between the nodes already exists append to list the second date
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # Frozenset.... dont we lose the information weather we are looking at indegree vs outdegree
+    edge_dict = {}
+    for edge in edge_list:
+        #print(edge[0])
+        if frozenset([edge[0],edge[1]]) not in edge_dict.keys():
+            edge_dict[frozenset([edge[0],edge[1]])] = [edge[2]["timestamp"]]
+        else:
+            edge_dict[frozenset([edge[0],edge[1]])].append(edge[2]["timestamp"])
+
+    #print(len(edge_dict))
+    # dictionary with each node as key
+    # then for every node count the number of in degree for every date of year
+    # only considering month and day, find the largest one and 
+    # NOTEEEE!!!!!!!!!!
+    # this is only dist with node as key and then list of dates that people posted on wall
+    # LOOK AT THE LENGTH OF each list to see how many people posted on the wall??
+    dates_dict = {}
+    for node in nodes:
+        in_edges = (G.in_edges(node))
+        for in_edge in in_edges:
+            #print(edge_dict[frozenset(in_edge)])
+            if node not in dates_dict.keys():
+                dates_dict[node] = list([edge_dict[frozenset(in_edge)]])      # here had ot add brackets because otherwise the first entry want read into a tuple but just the items
+            else:
+                dates_dict[node].append(edge_dict[frozenset(in_edge)])
+
+    
+    #for i in dates_dict.keys():
+    #    print(dates_dict[i])
+
+
+
+
+
+    interactions_dict = {}
+    # dict with every node as key and timestamp of every interaction... indeg/outdeg doesnt matter 
+    for edge in edge_list:
+        #print(edge)
+        if edge[0] not in interactions_dict.keys():
+            interactions_dict[edge[0]] = [edge[2]["timestamp"]]
+
+        if edge[1] not in interactions_dict.keys():
+            interactions_dict[edge[1]] = [edge[2]["timestamp"]]
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[0]].append(edge[2]["timestamp"])
+
+
+        if edge[0] in interactions_dict.keys():
+            interactions_dict[edge[1]].append(edge[2]["timestamp"])
+    #print(interactions_dict)
+
+
+    for key in interactions_dict.keys():
+        timestamps = interactions_dict[key]
+        min_timestamp = min(timestamps)
+        interactions_dict[key] = min_timestamp
+    
+
+
+    # Here we want to have lists of nodes that have been active for entire years 2005,2006,2007,2008
+    active2005, active2006, active2007, active2008 = [], [], [], []
+    for key in interactions_dict.keys():
+        first_post = interactions_dict[key]
+        if first_post < dt.datetime(2005, 1, 1, 0, 0):
+            active2005.append(key)
+        if first_post < dt.datetime(2006, 1, 1, 0, 0):
+            active2006.append(key)
+        if first_post < dt.datetime(2007, 1, 1, 0, 0):
+            active2007.append(key)
+        if first_post < dt.datetime(2008, 1, 1, 0, 0):
+            active2008.append(key)
+
+    # for each one of the nodes look at the indeg posts over entire upcoming year
+    # for each year append dates that have been posted on that nodes wall into seperate dict
+    dict_2005 = {}
+    for node in active2005:
+        if node in dates_dict.keys():
+            dates_lis = dates_dict[node]
+            flat_list = [item for sublist in dates_lis for item in sublist]
+            list_2005 = []
+            for date in flat_list:
+                #print(date)
+                if date.year == 2005:
+                    list_2005.append((date.day, date.month))
+            dict_2005[node] = list_2005
+
+    dict_2006 = {}
+    for node in active2006:
+        if node in dates_dict.keys():
+            dates_lis = dates_dict[node]
+            flat_list = [item for sublist in dates_lis for item in sublist]
+            list_2006 = []
+            for date in flat_list:
+                #print(date)
+                if date.year == 2006:
+                    list_2006.append((date.day, date.month))
+            dict_2006[node] = list_2006
+
+
+    dict_2007 = {}
+    for node in active2007:
+        if node in dates_dict.keys():
+            dates_lis = dates_dict[node]
+            flat_list = [item for sublist in dates_lis for item in sublist]
+            list_2007 = []
+            for date in flat_list:
+                #print(date)
+                if date.year == 2007:
+                    list_2007.append((date.day, date.month))
+            dict_2007[node] = list_2007
+
+
+    dict_2008 = {}
+    for node in active2008:
+        if node in dates_dict.keys():
+            dates_lis = dates_dict[node]
+            flat_list = [item for sublist in dates_lis for item in sublist]
+            list_2008 = []
+            for date in flat_list:
+                #print(date)
+                if date.year == 2008:
+                    list_2008.append((date.day, date.month))
+            dict_2008[node] = list_2008
+
+    # for each year look at the most popular date on each nodes wall
+    # if doesnt work then also count then number of posts on most frequent day.
+
+
+    #print(dict_2008)
+    
+    """
+    count_9215 = []
+    for date in list(dict_2006.values())[0]:
+        count_9215.append(date[1])
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(count_9215,12, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Month of the year')
+    plt.ylabel('Node 9215, year 2006')
+    plt.show()
+
+
+    count_9215 = []
+    for date in list(dict_2007.values())[0]:
+        count_9215.append(date[1])
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(count_9215,12, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Month of the year')
+    plt.ylabel('Node 9215, year 2007')
+    plt.show()
+
+    count_9215 = []
+    for date in list(dict_2008.values())[0]:
+        count_9215.append(date[1])
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(count_9215,12, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Month of the year')
+    plt.ylabel('Node 9215, year 2008')
+    plt.show()
+    """
+
+    assumed_bdays = []
+    for node in dict_2005:
+        dates_lis = dict_2005[node]
+        if dates_lis:
+            most_freq = most_frequent(dates_lis)
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # possibly also look at the counts
+            #print(most_freq[0][0])
+            #assumed_bdays.append(most_freq[0][0][1])
+            #print(dates_lis)
+
+    for node in dict_2006:
+        dates_lis = dict_2006[node]
+        if dates_lis:
+            most_freq = most_frequent(dates_lis)
+            #assumed_bdays.append(most_freq[0][0][1])
+
+    for node in dict_2007:
+        dates_lis = dict_2007[node]
+        if dates_lis:
+            most_freq = most_frequent(dates_lis)
+            #assumed_bdays.append(most_freq[0][0][1])
+
+
+    for node in dict_2008:
+        dates_lis = dict_2008[node]
+        if dates_lis:
+            most_freq = most_frequent(dates_lis)
+            assumed_bdays.append(most_freq[0][0][1])
+    
+
+
+    #print(assumed_bdays)
+    
+
+    plt.figure(figsize=(12, 8)) 
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    plt.hist(assumed_bdays,12, color = "g", histtype='bar', ec='black')
+    plt.xlabel('Month of the year')
+    plt.ylabel('2008')
+    plt.show()
+    
+
+    
+    return(assumed_bdays)
 
 
 def most_frequent(List):
     occurence_count = Counter(List)
-    return occurence_count.most_common(1)[0][0]
+    #print(occurence_count.most_common(1)[0][0])
+    return occurence_count.most_common(1)
 
 def normalise(G):
     nodes = G.nodes()
